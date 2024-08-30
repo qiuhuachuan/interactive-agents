@@ -17,7 +17,7 @@ data_mapping = {
 
 
 openai_client = OpenAI(api_key=os.environ.get("api_key"))
-openai_model = "gpt-4-preview"
+openai_model = "gpt-4-1106-preview"
 
 deepseek_client = OpenAI(api_key=os.environ.get("deepseek_key"), base_url="https://api.deepseek.com/")
 deepseek_model = "deepseek-chat"
