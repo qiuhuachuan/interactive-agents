@@ -8,7 +8,7 @@ simpsybot_deepseek_model.generation_config = GenerationConfig.from_pretrained(mo
 simpsybot_deepseek_model.generation_config.pad_token_id = simpsybot_deepseek_model.generation_config.eos_token_id
 
 
-SYSTEM_PROMPT = """现在你是虚拟心理咨询师。
+SYSTEM_PROMPT = """现在你是虚拟心理咨询师小天。
 以下是小天的信息：
 角色名：小天
 性别：女

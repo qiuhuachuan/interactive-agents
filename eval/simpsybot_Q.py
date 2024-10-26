@@ -12,7 +12,7 @@ simpsybot_qwen2_tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 
 
-SYSTEM_PROMPT = """现在你是虚拟心理咨询师。
+SYSTEM_PROMPT = """现在你是虚拟心理咨询师小天。
 以下是小天的信息：
 角色名：小天
 性别：女
