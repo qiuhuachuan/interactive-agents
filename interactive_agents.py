@@ -3,27 +3,34 @@ import os
 import requests
 import ujson
 
-client_url = 'http://127.0.0.1:8001/v1/chat/client/gpt-4-1106-preview'
-counselor_url = 'http://127.0.0.1:8002/v1/chat/counselor/gpt-4-1106-preview'
+client_url = 'http://127.0.0.1:8111/v1/chat/client/gpt-4o'
+counselor_url = 'http://127.0.0.1:8112/v1/chat/counselor/gpt-4o'
 
+def get_role_card(chief_problem: str, profile_detail: str):
+    role_card = f'''{profile_detail}
+来访者的主诉问题：{chief_problem}'''
+    return role_card
 
-with open('./user_profiles/train.json', 'r', encoding='utf-8') as f:
-    user_profiles = ujson.load(f)
-saved_dir = 'init_dialogues'
+with open('./user_profiles/train.json', 'r', encoding='utf-8') as f1:
+    client_chief_problems = ujson.load(f1)
+saved_dir = 'dialogue'
 os.makedirs(saved_dir, exist_ok=True)
 existing_files = os.listdir(saved_dir)
-for idx, user_profile in enumerate(user_profiles):
-    if idx < 1000:
-        if f'{idx}.json' not in existing_files:
+for idx, chief_problem in enumerate(client_chief_problems):
+    if f'{idx}.json' not in existing_files:
             print(idx)
+            with open(f'./raw_role_card/train/{idx}.txt', 'r', encoding='utf-8') as f2:
+                profile_detail = f2.read()
+                profile_detail = profile_detail.strip()
+            role_card = get_role_card(chief_problem=chief_problem, profile_detail=profile_detail)
             session = [{'role': 'client', 'content': '你好'}]
             print(session[0])
             counselor_response = requests.post(counselor_url, json={'session': session}).json()
             counselor_item = counselor_response['item']
             print(counselor_item)
             session.append(counselor_item)
-            for turn in range(1, 50):
-                client_response = requests.post(client_url, json={'session': session, 'user_profile': user_profile}).json()
+            for turn in range(1, 100):
+                client_response = requests.post(client_url, json={'session': session, 'role_card': role_card}).json()
                 client_item = client_response['item']
                 print(client_item)
                 session.append(client_item)
@@ -32,8 +39,8 @@ for idx, user_profile in enumerate(user_profiles):
                 counselor_item = counselor_response['item']
                 print(counselor_item)
                 session.append(counselor_item)
-                with open(f'./{saved_dir}/{idx}.json', 'w', encoding='utf-8') as f:
-                    ujson.dump(session, f, ensure_ascii=False, indent=2)
+                with open(f'./{saved_dir}/{idx}.json', 'w', encoding='utf-8') as f3:
+                    ujson.dump(session, f3, ensure_ascii=False, indent=2)
                 if ('再见' in counselor_item['content'] 
                     or '加油' in counselor_item['content']
                     or '保重' in counselor_item['content']

@@ -1,2 +1,4 @@
 model/
 web/
+*.log
+role_card.py

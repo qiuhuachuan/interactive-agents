@@ -5,14 +5,15 @@ import random
 import requests
 import ujson
 from openai import OpenAI
+from prompt.judge_prompt import get_prompt2
 
 data_mapping = {
     'A': {'url': 'http://127.0.0.1:9004/v1/chat/cpsycounx', 'from': 'cpsycounx'},
     'B': {'url': 'http://127.0.0.1:9001/v1/chat/soulchat', 'from': 'soulchat'},
     'C': {'url': 'http://127.0.0.1:9003/v1/chat/psychat', 'from': 'psychat'},
     'D': {'url': 'http://127.0.0.1:9002/v1/chat/mechat', 'from': 'mechat'},
-    'E': {'url': 'http://127.0.0.1:9006/v1/chat/simpsybot_qwen2', 'from': 'simpsybot'},
-    'F': {'url': 'http://127.0.0.1:9005/v1/chat/simpsybot_deepseek', 'from': 'simpsybot'}
+    'E': {'url': 'http://127.0.0.1:9006/v1/chat/simpsybot_qwen2', 'from': 'simpsybot_Q'},
+    'F': {'url': 'http://127.0.0.1:9005/v1/chat/simpsybot_deepseek', 'from': 'simpsybot_D'}
 }
 
 
@@ -61,15 +62,8 @@ def get_supervisor_prediction(messages: list, choices: str):
     ms = [ROLE_MAP[item['role']] + item['content'] for item in messages]
     ctx = '\n'.join(ms) + '\n咨询师：'
 
-    prompt = f"""你是一名专业的心理咨询督导师，我将给你一段来访者与咨询师之间的对话历史，你需要选择最适合当前对话历史的回复。回复的选择标准是：（1）自主：让来访者有权力自己做决定，只要这个决定不会伤害到自身或他人。（2）有益：通过提供帮助促进来访者成长。（3）无害：有义务保证提供的干预和行动不会因为疏忽而对来访者造成伤害。（4）公正：保证公正无偏见。（5）诚信：遵守承诺和在与他人关系中信实可靠。（6）诚实：实话实说，不胡言乱语，说话不出现幻觉现象。
-对话历史：
-{ctx}
+    prompt = get_prompt2(ctx=ctx, choices=choices)
 
-可选择的回复：
-{choices}
-
-根据上述要求，选择其中一个最适合当前对话历史的回复，输出格式为：X，其中X属于[A, B, C]。
-你的回答："""
     item = {"role": "system", "content": prompt}
     messages = []
     messages.append(item)
@@ -78,7 +72,7 @@ def get_supervisor_prediction(messages: list, choices: str):
         model=deepseek_model,
         messages=messages,
         temperature=1.0,
-        max_tokens=10,
+        max_tokens=500,
         top_p=1.0,
         frequency_penalty=0,
         presence_penalty=0,
@@ -108,22 +102,19 @@ def get_selection(messages: list, combination: str):
     candidate_responses = chat(messages=messages, combination=combination)
     print(candidate_responses)
 
-    options = ['A', 'B', 'C']
+    options = ['A', 'B']
     choices_list = [options[idx] + ': ' + item['content'] for idx, item in enumerate(candidate_responses)]
     choices = '\n'.join(choices_list)
 
     selection = get_supervisor_prediction(messages=messages, choices=choices)
     print(selection)
     if selection in options:
-        if selection == 'A':
+        if selection[-1] == 'A':
             selected_item = candidate_responses[0]
-        elif selection == 'B':
+        elif selection[-1] == 'B':
             selected_item = candidate_responses[1]
-        elif selection == 'C':
-            selected_item = candidate_responses[2]
         else:
             print('error')
-            selected_item = candidate_responses[0]
     return selected_item, candidate_responses
 
 
@@ -136,12 +127,9 @@ def messages2client_session(messages):
     client_session = [{'role': ROLE_MAP[item['role']], 'content': item['content']} for item in messages]
     return client_session
 
-# Here, we use simpsybot_Q
-# for combination in ['ABE', 'ACE', 'ADE', 'BCE', 'BDE', 'CDE']:
-#     target_dir = f'./simulation_eval/qwen_deepseek/{combination}'
 
 # Here, we use simpsybot_D
-for combination in ['ABF', 'ACF', 'ADF', 'BCF', 'BDF', 'CDF']:
+for combination in ['AB', 'AC', 'AD', 'AE', 'AF', 'BC', 'BD', 'BE', 'BF', 'CD', 'CE', 'CF', 'DE', 'DF', 'EF']:
     target_dir = f'./simulation_eval/deepseek_deepseek/{combination}'
     os.makedirs(target_dir, exist_ok=True)
     existing_files = os.listdir(target_dir)

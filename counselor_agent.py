@@ -3,14 +3,18 @@ import os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from openai import OpenAI
+from openai import AzureOpenAI
 from pydantic import BaseModel
 
-client = OpenAI(api_key=os.environ.get("api_key"))
-model = "gpt-4-1106-preview"
+openai_client = AzureOpenAI(
+    azure_endpoint=os.environ.get("azure_endpoint2"),
+    api_key=os.environ.get("api_key2"),
+    api_version=os.environ.get("api_version2"),
+)
+openai_model = 'gpt-4o'
 
 
-ROLE = {"client": "user", "counselor": "assistant"}
+ROLE_REV = {"client": "user", "counselor": "assistant"}
 
 
 class SessionObj(BaseModel):
@@ -36,7 +40,10 @@ SYSTEM_PROMPT = """现在你是虚拟心理咨询师小天。
 6. 话术需要参考有经验的真人心理咨询师，尽可能口语化。
 7. 严格遵循咨询的前、中、后三个阶段采用对应的策略。
 8. 咨询师不要主动终止心理咨询流程。
-9. 更多的是引导用户思考和探索。"""
+9. 更多的是引导用户思考和探索。
+10. 不要太早提出“加油”、“保重”、“再见”、“一切顺利”、“祝你好运”、“期待你”、“下一次”和“下次见”等结束语。
+11. 咨询过程中需要100轮的交互。
+12. 不要给来访者罗列一般性的建议，需要提供个性化建议。在需要提供建议时，数量限制在1个。"""
 
 app = FastAPI()
 app.add_middleware(
@@ -51,7 +58,7 @@ app.add_middleware(
 def process_session(pre_session: list):
     session = []
     for item in pre_session:
-        session.append({"role": ROLE[item["role"]], "content": item["content"]})
+        session.append({"role": ROLE_REV[item["role"]], "content": item["content"]})
     return session
 
 
@@ -61,11 +68,11 @@ def get_prediction(session: list):
     messages.append(system_item)
     messages += session
 
-    result = client.chat.completions.create(
-        model=model,
+    result = openai_client.chat.completions.create(
+        model=openai_model,
         messages=messages,
         temperature=1.0,
-        max_tokens=500,
+        max_tokens=200,
         top_p=1.0,
         frequency_penalty=0,
         presence_penalty=0,
@@ -76,16 +83,15 @@ def get_prediction(session: list):
     return {"role": "counselor", "content": content}
 
 
-@app.post("/v1/chat/counselor/gpt-4-1106-preview")
+@app.post("/v1/chat/counselor/gpt-4o")
 async def chat(SessionObj: SessionObj):
     pre_session = SessionObj.session
     session = process_session(pre_session=pre_session)
-    print(session)
     item = get_prediction(session=session)
     return {"item": item, "responseCode": 200}
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8002)
+    uvicorn.run(app, host="127.0.0.1", port=8112)
 
 # nohup python -u counselor_agent.py > ./counselor_agent.log &
