@@ -1,6 +1,6 @@
 # Interactive Agents: Simulating Counselor-Client Psychological Counseling via Role-Playing LLM-to-LLM Interactions
 
-**🔥🔥🔥 Paper**: [https://www.arxiv.org/abs/2408.15787](https://aclanthology.org/2026.starsem-conference.29.pdf)
+**🔥🔥🔥 Paper**: [https://aclanthology.org/2026.starsem-conference.29/]](https://aclanthology.org/2026.starsem-conference.29/)
 
 **Model**:
 
